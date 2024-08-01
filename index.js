@@ -86,12 +86,12 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 		} else if (row) {
 			// Account exists and is verified
 			// Send the alert
-			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported an ${event}, ZONE ${zoneNumber}, ${zoneName} at ${placeName}" -o /tmp/${transaction}.wav`).then((output) => {
-				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-ast.wav`).then(() => {
+			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported an ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}" -o /tmp/${transaction}.wav`).then((output) => {
+				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 					runCommand(`rm /tmp/${transaction}.wav`)
 					// strip extension from filename
 
-					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-ast "Ik5vb24gQ2hpbWUiIDw+"`).then(() => {
+					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "Ik5vb24gQ2hpbWUiIDw+"`).then(() => {
 						console.log(`Alert sent to ${row.phone}`);
 					})
 				})
@@ -102,7 +102,33 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 		}
 	});
 }
-sendAlert(1961600249, generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
+
+function sendVerificationCode(account) {
+	// Get verification code from database
+	db.get("SELECT * FROM verification_codes WHERE account_id = ?", account, (err, row) => {
+		if (err) {
+			console.error(err);
+		} else if (row) {
+			// Send verification code to phone number
+			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. Your verification code is ${row.code}" -o /tmp/${account}-code.wav`).then((output) => {
+				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {
+					runCommand(`rm /tmp/${account}-code.wav`)
+					// strip extension from filename
+
+					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${account}-verification "Ik5vb24gQ2hpbWUiIDw+"`).then(() => {
+						console.log(`Verification code sent to ${row.phone}`);
+					})
+				})
+			})
+		} else {
+			return;
+			// Account does not exist or is not verified
+		}
+	});
+}
+
+sendVerificationCode(1961600249)
+
 client.on("ready", async () => {
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 

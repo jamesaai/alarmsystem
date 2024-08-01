@@ -260,7 +260,7 @@ client.on("interactionCreate", async (interaction) => {
 			break;
 		case "deactivate": // Deactivate an account
 			// Check that account_number is owned by the user, if it is, delete the row
-			accountNumber = interaction.options.getInteger("account_number");
+			accountNumber = interaction.options.getString("account_number");
 			db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ?", interaction.user.id, accountNumber, (err, row) => {
 				if (err) {
 					console.error(err);

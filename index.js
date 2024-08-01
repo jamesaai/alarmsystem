@@ -127,6 +127,11 @@ function sendVerificationCode(account) {
 	});
 }
 
+function generatePhoneCode() {
+	// generate 6 digit
+	return Math.floor(100000 + Math.random() * 900000).toString().split("").join(" ");
+}
+
 client.on("ready", async () => {
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 
@@ -166,7 +171,7 @@ client.on("interactionCreate", async (interaction) => {
 					interaction.reply("You already have an unverified account. Please verify it before creating a new one.");
 				} else {
 					accountNumber = generateAccountNumber();
-					verification_code = generateTransactionNumber();
+					verification_code = generatePhoneCode();
 					db.run("INSERT INTO accounts (id, discord_id, verification_code, phone) VALUES (?, ?, ?, ?)", accountNumber, interaction.user.id, verification_code, phone_number, (err) => {
 						if (err) {
 							console.error(err);
@@ -269,8 +274,8 @@ client.on("interactionCreate", async (interaction) => {
 						interaction.reply("Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number");
 						return;
 					}
-					verificationCode = generateTransactionNumber();
-					db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, accountNumber, verificationCode, (err) => {
+					verification_code = generatePhoneCode();
+					db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, accountNumber, verification_code, (err) => {
 						if (err) {
 							console.error(err);
 						} else {

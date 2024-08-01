@@ -89,7 +89,9 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported an ${event} at ${placeName} in ${zoneNumber}, ${zoneName}" -o /tmp/${transaction}.wav`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-ast.wav`).then(() => {
 					runCommand(`rm /tmp/${transaction}.wav`)
-					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/test-asterisk "Ik5vb24gQ2hpbWUiIDw+"`).then(() => {
+					// strip extension from filename
+
+					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-ast "Ik5vb24gQ2hpbWUiIDw+"`).then(() => {
 						console.log(`Alert sent to ${row.phone}`);
 					})
 				})

@@ -275,7 +275,7 @@ client.on("interactionCreate", async (interaction) => {
 						return;
 					}
 					verification_code = generatePhoneCode();
-					db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, accountNumber, verification_code, (err) => {
+					db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, verification_code, accountNumber, (err) => {
 						if (err) {
 							console.error(err);
 						} else {

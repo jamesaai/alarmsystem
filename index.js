@@ -127,8 +127,6 @@ function sendVerificationCode(account) {
 	});
 }
 
-sendVerificationCode(1961600249)
-
 client.on("ready", async () => {
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 
@@ -154,6 +152,12 @@ client.on("interactionCreate", async (interaction) => {
 
 	switch (interaction.commandName) {
 		case "register":
+			phone_number = interaction.options.getString("phone_number");
+			// Check that phone_number is either a 4 digit number starting with 1, a 7 digit number, a 10 digit number, or an 11 digit number starting with 1
+			if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
+				interaction.reply("Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number");
+				return;
+			}
 			// check that the user doesnt have any unverified accounts already (check discord_id and verified)
 			db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
 				if (err) {
@@ -161,16 +165,127 @@ client.on("interactionCreate", async (interaction) => {
 				} else if (row) {
 					interaction.reply("You already have an unverified account. Please verify it before creating a new one.");
 				} else {
-					const accountNumber = generateAccountNumber();
-					db.run("INSERT INTO accounts (id, discord_id) VALUES (?, ?)", accountNumber, interaction.user.id, (err) => {
+					accountNumber = generateAccountNumber();
+					verificationCode = generateTransactionNumber();
+					db.run("INSERT INTO accounts (id, discord_id, verification_code, phone) VALUES (?, ?, ?, ?)", accountNumber, interaction.user.id, verification_code, phone_number, (err) => {
 						if (err) {
 							console.error(err);
 						} else {
-							interaction.reply(`Account created with number ${accountNumber}`);
+							sendVerificationCode(accountNumber);
+							interaction.reply({
+								content: `Account created. Please verify your account by entering the verification code sent to ${phone_number}`,
+								ephemeral: true
+							});
 						}
 					});
 				}
 			});
+			break;
+		case "verify":
+			verification_code = interaction.options.getString("verification_code");
+			db.get("SELECT * FROM accounts WHERE verification_code = ? AND verified = 0", verification_code, (err, row) => {
+				if (err) {
+					console.error(err);
+				} else if (row) {
+					db.run("UPDATE accounts SET verified = 1 WHERE verification_code = ?", verification_code, (err) => {
+						if (err) {
+							console.error(err);
+						} else {
+							interaction.reply({
+								content: `Account Verified! Your account number is \`${row.id}\`.\nFor help setting up the dialer, feel free to contact a member of staff!`,
+							})
+						}
+					});
+				} else {
+					interaction.reply("Invalid verification code.");
+				}
+			});
+			break;
+		case "resend":
+			// Find the account thats unverified owned by the user
+			db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
+				if (err) {
+					console.error(err);
+				} else if (row) {
+					sendVerificationCode(row.id);
+					interaction.reply({
+						content: `Verification code resent to ${row.phone}`,
+						ephemeral: true
+					});
+				} else {
+					interaction.reply("You don't have an unverified account.");
+				}
+			});
+			break;
+		case "list":
+			// list all active accounts owned by the user
+			db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
+				if (err) {
+					console.error(err);
+				} else if (rows) {
+					let accountList = "";
+					rows.forEach((row) => {
+						accountList += `\`${row.id}\` - \`${row.phone}\`\n`;
+					});
+					interaction.reply({
+						content: `Active accounts:\n${accountList}`,
+						ephemeral: true
+					});
+				} else {
+					interaction.reply("You don't have any active accounts.");
+				}
+			});
+			break;
+		case "deactivate": // Deactivate an account
+			// Check that account_number is owned by the user, if it is, delete the row
+			accountNumber = interaction.options.getInteger("account_number");
+			db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ?", interaction.user.id, accountNumber, (err, row) => {
+				if (err) {
+					console.error(err);
+				} else if (row) {
+					db.run("DELETE FROM accounts WHERE id = ?", accountNumber, (err) => {
+						if (err) {
+							console.error(err);
+						} else {
+							interaction.reply({
+								content: `Account \`${accountNumber}\` deactivated.`,
+								ephemeral: true
+							});
+						}
+					});
+				} else {
+					interaction.reply("You don't own that account.");
+				}
+			});
+			break;
+		case "update": // If the account is owned by the user and verified, update the phone number, unverify it, and send verification to the new number. Do the same checks as register
+			accountNumber = interaction.options.getInteger("account_number");
+			phone_number = interaction.options.getString("phone_number");
+			db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ? AND verified = 1", interaction.user.id, accountNumber, (err, row) => {
+				if (err) {
+					console.error(err);
+				} else if (row) {
+					if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
+						interaction.reply("Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number");
+						return;
+					}
+					verificationCode = generateTransactionNumber();
+					db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, accountNumber, verificationCode, (err) => {
+						if (err) {
+							console.error(err);
+						} else {
+							sendVerificationCode(accountNumber);
+							interaction.reply({
+								content: `Account updated. Please verify your account by entering the verification code sent to ${phone_number}`,
+								ephemeral: true
+							});
+						}
+					});
+				} else {
+					interaction.reply("You don't own that account.");
+				}
+			});
+			break;
 	}
 });
 

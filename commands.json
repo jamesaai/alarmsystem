@@ -72,5 +72,10 @@
 				"autocomplete": true
 			}
 		]
+	},
+	{
+		"name": "list",
+		"description": "List all active accounts",
+		"type": 1
 	}
 ]

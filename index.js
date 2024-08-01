@@ -34,6 +34,8 @@ const client = new Discord.Client({
 	]
 });
 
+app.use(express.json());
+
 // Vars
 
 var handledTransactions = [];
@@ -160,7 +162,7 @@ client.on("interactionCreate", async (interaction) => {
 			phone_number = interaction.options.getString("phone_number");
 			// Check that phone_number is either a 4 digit number starting with 1, a 7 digit number, a 10 digit number, or an 11 digit number starting with 1
 			if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
-				interaction.reply("Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number");
+				interaction.reply({ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number"});
 				return;
 			}
 			// check that the user doesnt have any unverified accounts already (check discord_id and verified)
@@ -168,7 +170,7 @@ client.on("interactionCreate", async (interaction) => {
 				if (err) {
 					console.error(err);
 				} else if (row) {
-					interaction.reply("You already have an unverified account. Please verify it before creating a new one.");
+					interaction.reply({ephemeral: true, content: "You already have an unverified account. Please verify it before creating a new one."});
 				} else {
 					accountNumber = generateAccountNumber();
 					verification_code = generatePhoneCode();
@@ -202,7 +204,7 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 				} else {
-					interaction.reply("Invalid verification code.");
+					interaction.reply({ephemeral: true, content: "Invalid verification code."});
 				}
 			});
 			break;
@@ -218,7 +220,7 @@ client.on("interactionCreate", async (interaction) => {
 						ephemeral: true
 					});
 				} else {
-					interaction.reply("You don't have an unverified account.");
+					interaction.reply({ephemeral: true, content: "You don't have an unverified account."});
 				}
 			});
 			break;
@@ -237,7 +239,7 @@ client.on("interactionCreate", async (interaction) => {
 						ephemeral: true
 					});
 				} else {
-					interaction.reply("You don't have any active accounts.");
+					interaction.reply({ephemeral: true, content: "You don't have any active accounts."});
 				}
 			});
 			break;
@@ -259,7 +261,7 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 				} else {
-					interaction.reply("You don't own that account.");
+					interaction.reply({ephemeral:true, content: "You don't own that account."});
 				}
 			});
 			break;
@@ -271,7 +273,7 @@ client.on("interactionCreate", async (interaction) => {
 					console.error(err);
 				} else if (row) {
 					if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
-						interaction.reply("Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number");
+						interaction.reply({ephemeral: true, content:"Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number"});
 						return;
 					}
 					verification_code = generatePhoneCode();
@@ -287,12 +289,19 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 				} else {
-					interaction.reply("You don't own that account.");
+					interaction.reply({content: "You don't own that account.", ephemeral: true});
 				}
 			});
 			break;
 	}
 });
+
+
+app.post("/api/v1/alert", (req, res) => {
+	console.log(req.body);
+	// send no content response
+	res.sendStatus(204);
+})
 
 
 startTime = new Date();

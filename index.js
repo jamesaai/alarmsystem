@@ -264,7 +264,7 @@ client.on("interactionCreate", async (interaction) => {
 			});
 			break;
 		case "update": // If the account is owned by the user and verified, update the phone number, unverify it, and send verification to the new number. Do the same checks as register
-			accountNumber = interaction.options.getInteger("account_number");
+			accountNumber = interaction.options.getString("account_number");
 			phone_number = interaction.options.getString("phone_number");
 			db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ? AND verified = 1", interaction.user.id, accountNumber, (err, row) => {
 				if (err) {

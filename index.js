@@ -166,7 +166,7 @@ client.on("interactionCreate", async (interaction) => {
 					interaction.reply("You already have an unverified account. Please verify it before creating a new one.");
 				} else {
 					accountNumber = generateAccountNumber();
-					verificationCode = generateTransactionNumber();
+					verification_code = generateTransactionNumber();
 					db.run("INSERT INTO accounts (id, discord_id, verification_code, phone) VALUES (?, ?, ?, ?)", accountNumber, interaction.user.id, verification_code, phone_number, (err) => {
 						if (err) {
 							console.error(err);

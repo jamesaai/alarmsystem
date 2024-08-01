@@ -312,7 +312,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 
-app.post("/api/v1/alert", (req, res) => {
+app.post("/api/v1/alert", (req, res) => { // Legacy alert endpoint
 	console.log(req.body);
 	// send no content response
 	sendAlert(req.body.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
@@ -321,6 +321,22 @@ app.post("/api/v1/alert", (req, res) => {
 		res.status(500).send();
 	});
 })
+
+app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
+	switch(req.params.brand) {
+		case "kca":
+			// send alert to accountNumber
+			sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
+				res.status(204).send();
+			}).catch((error) => {
+				res.status(500).send();
+			});
+			break;
+		default:
+			res.status(400).send("Brand not found");
+			break;
+	}
+});
 
 // sendAlert("6371787150", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
 startTime = new Date();

@@ -200,6 +200,7 @@ client.on("interactionCreate", async (interaction) => {
 						} else {
 							interaction.reply({
 								content: `Account Verified! Your account number is \`${row.id}\`.\nFor help setting up the dialer, feel free to contact a member of staff!`,
+								ephemeral: true
 							})
 						}
 					});

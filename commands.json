@@ -1,0 +1,76 @@
+[
+	{
+		"name": "register",
+		"description": "Register for a new account number",
+		"type": 1,
+		"options": [
+			{
+				"name": "phone_number",
+				"description": "The 10 digit US phone number to call when the system is triggered",
+				"type": 3,
+				"required": true
+			}
+		]
+	},
+	{
+		"name": "verify",
+		"description": "Verify the phone number on a new account",
+		"type": 1,
+		"options": [
+			{
+				"name": "verification_code",
+				"description": "The 6 digit verification code sent to the phone number",
+				"type": 3,
+				"required": true
+			}
+		]
+	},
+	{
+		"name": "update",
+		"description": "Update the phone number on an account",
+		"type": 1,
+		"options": [
+			{
+				"name": "account_number",
+				"description": "The account number to update",
+				"type": 3,
+				"required": true,
+				"autocomplete": true
+			},
+			{
+				"name": "phone_number",
+				"description": "The 10 digit US phone number to call when the system is triggered",
+				"type": 3,
+				"required": true
+			}
+		]
+	},
+	{
+		"name": "deactivate",
+		"description": "Deactivate an account",
+		"type": 1,
+		"options": [
+			{
+				"name": "account_number",
+				"description": "The account number to deactivate",
+				"type": 3,
+				"required": true,
+				"autocomplete": true
+			}
+		]
+	},
+	{
+		"name": "resend",
+		"description": "Resend the verification code to a phone number",
+		"type": 1,
+		"options": [
+			{
+				"name": "phone_number",
+				"description": "The 10 digit US phone number to call when the system is triggered",
+				"type": 3,
+				"required": true,
+				"autocomplete": true
+			}
+		]
+	}
+]

@@ -102,7 +102,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 		}
 	});
 }
-sendAlert(1961600249, generateTransactionNumber(), "Test Place", "Test System", 1, "Test Zone", "alarm");
+sendAlert(1961600249, generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
 client.on("ready", async () => {
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 

@@ -24,7 +24,7 @@ const {
 	REST,
 	Routes
 } = require('discord.js');
-const { title } = require("process");
+const { title, send } = require("process");
 const rest = new REST({
 	version: '10'
 }).setToken(process.env.DISCORD_TOKEN);
@@ -304,6 +304,7 @@ app.post("/api/v1/alert", (req, res) => {
 	res.sendStatus(204);
 })
 
-
+sendAlert("8030990641", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
+sendAlert("7042361220", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
 startTime = new Date();
 client.login(process.env.DISCORD_TOKEN);

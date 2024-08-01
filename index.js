@@ -129,7 +129,7 @@ function sendVerificationCode(account) {
 
 function generatePhoneCode() {
 	// generate 6 digit
-	return Math.floor(100000 + Math.random() * 900000).toString().split("").join(" ");
+	return Math.floor(100000 + Math.random() * 900000).toString().split("").join(", ");
 }
 
 client.on("ready", async () => {

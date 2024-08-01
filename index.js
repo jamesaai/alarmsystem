@@ -110,7 +110,7 @@ function sendVerificationCode(account) {
 			console.error(err);
 		} else if (row) {
 			// Send verification code to phone number
-			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. Your verification code is ${row.verification_code}" -o /tmp/${account}-code.wav`).then((output) => {
+			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. Your verification code is ${row.verification_code}. Repeating, your code is ${row.verification_code}" -o /tmp/${account}-code.wav`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {
 					runCommand(`rm /tmp/${account}-code.wav`)
 					// strip extension from filename

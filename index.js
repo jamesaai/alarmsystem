@@ -95,7 +95,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
 
-							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDw+"`).then(() => {
+							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
 								console.log(`Alert sent to ${row.phone}`);
 								resolve();
 							}).catch((error) => {
@@ -131,7 +131,7 @@ function sendVerificationCode(account) {
 					runCommand(`rm /tmp/${account}-code.wav`)
 					// strip extension from filename
 
-					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${account}-verification "IktDQSBTZWN1cmlOZXQiIDw+"`).then(() => {
+					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${account}-verification "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
 						console.log(`Verification code sent to ${row.phone}`);
 					})
 				})

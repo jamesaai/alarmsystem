@@ -190,7 +190,7 @@ function generatePhoneCode() {
 }
 
 client.on("ready", async () => {
-	sendDemo("6371787150", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
+	//sendDemo("6371787150", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 
 	const commands = require("./commands.json");

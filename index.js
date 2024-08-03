@@ -76,6 +76,47 @@ function generateTransactionNumber() {
 	return Math.floor(Math.random() * 10000000000);
 }
 
+function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber, zoneName, event) {
+	return new Promise((resolve, reject) => {
+		if (handledTransactions.includes(transaction)) {
+			resolve(); // Duplicate transaction
+		} else {
+			handledTransactions.push(transaction);
+			// Check if the account exists and is verified
+			// Account exists and is verified
+			// Send the alert
+			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}" -o /tmp/${transaction}.wav`).then((output) => {
+				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
+					runCommand(`rm /tmp/${transaction}.wav`)
+					// strip extension from filename
+
+					client.channels.cache.get("1269078717552922745").send({
+						embeds: [{
+							title: "Demo Alert",
+							description: `Place: ${placeName}\nSystem: ${systemName}\nZone: ${zoneNumber} - ${zoneName}\nEvent: ${event}`
+						}],
+						files: [{
+							attachment: `/tmp/${transaction}-alert.wav`,
+							name: `${transaction}-alert.wav`
+						}]
+					}).then(() => {
+						resolve();
+					}).catch((error) => {
+						console.error(error);
+						reject(error);
+					});
+				}).catch((error) => {
+					console.error(error);
+					reject(error);
+				});
+			}).catch((error) => {
+				console.error(error);
+				reject(error);
+			});
+		}
+	});
+}
+
 function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber, zoneName, event) {
 	return new Promise((resolve, reject) => {
 		if (handledTransactions.includes(transaction)) {
@@ -149,6 +190,7 @@ function generatePhoneCode() {
 }
 
 client.on("ready", async () => {
+	sendDemo("6371787150", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 
 	const commands = require("./commands.json");
@@ -176,7 +218,7 @@ client.on("interactionCreate", async (interaction) => {
 			phone_number = interaction.options.getString("phone_number");
 			// Check that phone_number is either a 4 digit number starting with 1, a 7 digit number, a 10 digit number, or an 11 digit number starting with 1
 			if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
-				interaction.reply({ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number"});
+				interaction.reply({ ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number" });
 				return;
 			}
 			// check that the user doesnt have any unverified accounts already (check discord_id and verified)
@@ -184,7 +226,7 @@ client.on("interactionCreate", async (interaction) => {
 				if (err) {
 					console.error(err);
 				} else if (row) {
-					interaction.reply({ephemeral: true, content: "You already have an unverified account. Please verify it before creating a new one."});
+					interaction.reply({ ephemeral: true, content: "You already have an unverified account. Please verify it before creating a new one." });
 				} else {
 					accountNumber = generateAccountNumber();
 					verification_code = generatePhoneCode();
@@ -219,7 +261,7 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 				} else {
-					interaction.reply({ephemeral: true, content: "Invalid verification code."});
+					interaction.reply({ ephemeral: true, content: "Invalid verification code." });
 				}
 			});
 			break;
@@ -235,7 +277,7 @@ client.on("interactionCreate", async (interaction) => {
 						ephemeral: true
 					});
 				} else {
-					interaction.reply({ephemeral: true, content: "You don't have an unverified account."});
+					interaction.reply({ ephemeral: true, content: "You don't have an unverified account." });
 				}
 			});
 			break;
@@ -254,7 +296,7 @@ client.on("interactionCreate", async (interaction) => {
 						ephemeral: true
 					});
 				} else {
-					interaction.reply({ephemeral: true, content: "You don't have any active accounts."});
+					interaction.reply({ ephemeral: true, content: "You don't have any active accounts." });
 				}
 			});
 			break;
@@ -276,7 +318,7 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 				} else {
-					interaction.reply({ephemeral:true, content: "You don't own that account."});
+					interaction.reply({ ephemeral: true, content: "You don't own that account." });
 				}
 			});
 			break;
@@ -288,7 +330,7 @@ client.on("interactionCreate", async (interaction) => {
 					console.error(err);
 				} else if (row) {
 					if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
-						interaction.reply({ephemeral: true, content:"Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number"});
+						interaction.reply({ ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number" });
 						return;
 					}
 					verification_code = generatePhoneCode();
@@ -304,7 +346,7 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 				} else {
-					interaction.reply({content: "You don't own that account.", ephemeral: true});
+					interaction.reply({ content: "You don't own that account.", ephemeral: true });
 				}
 			});
 			break;
@@ -323,14 +365,24 @@ app.post("/api/v1/alert", (req, res) => { // Legacy alert endpoint
 })
 
 app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
-	switch(req.params.brand) {
+	switch (req.params.brand) {
 		case "kca":
-			// send alert to accountNumber
-			sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
-				res.status(204).send();
-			}).catch((error) => {
-				res.status(500).send();
-			});
+			if (req.params.accountNumber == "DEMOTEST") {
+				// Generate the audio files, then post it to discord
+				sendDemo(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
+					res.status(204).send();
+				}).catch((error) => {
+					res.status(500).send();
+				});
+			} else {
+
+				// send alert to accountNumber
+				sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
+					res.status(204).send();
+				}).catch((error) => {
+					res.status(500).send();
+				});
+			}
 			break;
 		default:
 			res.status(400).send("Brand not found");
@@ -338,6 +390,5 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 	}
 });
 
-// sendAlert("6371787150", generateTransactionNumber(), "KCA Product Showcase", "Building Security", 1, "Front Door", "alarm");
 startTime = new Date();
 client.login(process.env.DISCORD_TOKEN);

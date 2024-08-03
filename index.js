@@ -76,7 +76,7 @@ function generateTransactionNumber() {
 	return Math.floor(Math.random() * 10000000000);
 }
 
-function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber, zoneName, event) {
+function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber, zoneName, event, placeId) {
 	return new Promise((resolve, reject) => {
 		if (handledTransactions.includes(transaction)) {
 			resolve(); // Duplicate transaction
@@ -93,7 +93,7 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 					client.channels.cache.get("1269078717552922745").send({
 						embeds: [{
 							title: "Demo Alert",
-							description: `Place: ${placeName}\nSystem: ${systemName}\nZone: ${zoneNumber} - ${zoneName}\nEvent: ${event}`
+							description: `Place: [${placeName}](https://roblox.com/games/${placeId}/linkgenerator)\nSystem: ${systemName}\nZone: ${zoneNumber} - ${zoneName}\nEvent: ${event}`
 						}],
 						files: [{
 							attachment: `/tmp/${transaction}-alert.wav`,
@@ -369,7 +369,7 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 		case "kca":
 			if (req.params.accountNumber == "DEMOTEST") {
 				// Generate the audio files, then post it to discord
-				sendDemo(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
+				sendDemo(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event, req.body.placeId).then(() => {
 					res.status(204).send();
 				}).catch((error) => {
 					res.status(500).send();

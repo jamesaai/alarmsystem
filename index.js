@@ -160,6 +160,49 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 	});
 }
 
+function sendTTS(accountNumber, text) {
+	return new Promise((resolve, reject) => {
+		if (handledTransactions.includes(transaction)) {
+			resolve(); // Duplicate transaction
+		} else {
+			handledTransactions.push(transaction);
+			// Check if the account exists and is verified
+			db.get("SELECT * FROM accounts WHERE id = ? AND verified = 1", accountNumber, (err, row) => {
+				if (err) {
+					console.error(err);
+					reject(err);
+				} else if (row) {
+					// Account exists and is verified
+					// Send the alert
+					runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${text}" -o /tmp/${transaction}.wav`).then((output) => {
+						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-tts.wav`).then(() => {
+							runCommand(`rm /tmp/${transaction}.wav`)
+							// strip extension from filename
+
+							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+								console.log(`TTS sent to ${row.phone}`);
+								resolve();
+							}).catch((error) => {
+								console.error(error);
+								reject(error);
+							});
+						}).catch((error) => {
+							console.error(error);
+							reject(error);
+						});
+					}).catch((error) => {
+						console.error(error);
+						reject(error);
+					});
+				} else {
+					resolve();
+					// Account does not exist or is not verified
+				}
+			});
+		}
+	});
+}
+
 function sendVerificationCode(account) {
 	// Get verification code from database
 	db.get("SELECT * FROM accounts WHERE id = ?", account, (err, row) => {
@@ -391,6 +434,16 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 			res.status(400).send("Brand not found");
 			break;
 	}
+});
+
+app.post("/api/v1/tts", (req, res) => {
+	console.log(req.body);
+	// send no content response
+	sendTTS(req.body.accountNumber, req.body.text).then(() => {
+		res.status(204).send();
+	}).catch((error) => {
+		res.status(500).send();
+	});
 });
 
 startTime = new Date();

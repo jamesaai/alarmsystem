@@ -234,10 +234,13 @@ client.on("interactionCreate", async (interaction) => {
 						if (err) {
 							console.error(err);
 						} else {
-							sendVerificationCode(accountNumber);
 							interaction.reply({
-								content: `Account created. Please verify your account by entering the verification code sent to ${phone_number}`,
+								content: `Account created. Our system will call you shortly with a verification code. Please enter that code into \`/verify\``,
 								ephemeral: true
+							}).then(() => {
+								setTimeout(() => {
+									sendVerificationCode(accountNumber);
+								}, 5000); // Wait 5 seconds before calling so user has time to read message
 							});
 						}
 					});

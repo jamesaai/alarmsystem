@@ -61,17 +61,8 @@
 	},
 	{
 		"name": "resend",
-		"description": "Resend the verification code to a phone number",
-		"type": 1,
-		"options": [
-			{
-				"name": "phone_number",
-				"description": "The 10 digit US phone number to call when the system is triggered",
-				"type": 3,
-				"required": true,
-				"autocomplete": true
-			}
-		]
+		"description": "Resend the verification code",
+		"type": 1
 	},
 	{
 		"name": "list",

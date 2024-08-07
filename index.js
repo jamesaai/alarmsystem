@@ -160,7 +160,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 	});
 }
 
-function sendTTS(accountNumber, text) {
+function sendTTS(accountNumber, transaction, text) {
 	return new Promise((resolve, reject) => {
 		if (handledTransactions.includes(transaction)) {
 			resolve(); // Duplicate transaction
@@ -439,7 +439,7 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 app.post("/api/v1/tts", (req, res) => {
 	console.log(req.body);
 	// send no content response
-	sendTTS(req.body.accountNumber, req.body.text).then(() => {
+	sendTTS(req.body.accountNumber, req.body.transaction, req.body.text).then(() => {
 		res.status(204).send();
 	}).catch((error) => {
 		res.status(500).send(error);

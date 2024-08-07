@@ -443,6 +443,7 @@ app.post("/api/v1/tts", (req, res) => {
 		res.status(204).send();
 	}).catch((error) => {
 		res.status(500).send(error);
+		console.log(error.stack)
 	});
 });
 

@@ -406,7 +406,7 @@ app.post("/api/v1/alert", (req, res) => { // Legacy alert endpoint
 	sendAlert(req.body.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
 		res.status(204).send();
 	}).catch((error) => {
-		res.status(500).send();
+		res.status(500).send(error);
 	});
 })
 
@@ -418,7 +418,7 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 				sendDemo(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event, req.body.placeId).then(() => {
 					res.status(204).send();
 				}).catch((error) => {
-					res.status(500).send();
+					res.status(500).send(error);
 				});
 			} else {
 
@@ -426,7 +426,7 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 				sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
 					res.status(204).send();
 				}).catch((error) => {
-					res.status(500).send();
+					res.status(500).send(error);
 				});
 			}
 			break;
@@ -442,7 +442,7 @@ app.post("/api/v1/tts", (req, res) => {
 	sendTTS(req.body.accountNumber, req.body.text).then(() => {
 		res.status(204).send();
 	}).catch((error) => {
-		res.status(500).send();
+		res.status(500).send(error);
 	});
 });
 

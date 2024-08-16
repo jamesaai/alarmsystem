@@ -254,168 +254,194 @@ client.on("ready", async () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-	if (!interaction.isCommand()) return;
+	switch (interaction.type) {
+		case Discord.InteractionType.ApplicationCommand:
 
-	switch (interaction.commandName) {
-		case "register":
-			phone_number = interaction.options.getString("phone_number");
-			// Check that phone_number is either a 4 digit number starting with 1, a 7 digit number, a 10 digit number, or an 11 digit number starting with 1
-			if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
-				interaction.reply({ ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number" });
-				return;
-			}
-			// check that the user doesnt have any unverified accounts already (check discord_id and verified)
-			db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row) {
-					interaction.reply({ ephemeral: true, content: "You already have an unverified account. Please verify it before creating a new one." });
-				} else {
-					accountNumber = generateAccountNumber();
-					verification_code = generatePhoneCode();
-					db.run("INSERT INTO accounts (id, discord_id, verification_code, phone) VALUES (?, ?, ?, ?)", accountNumber, interaction.user.id, verification_code, phone_number, (err) => {
-						if (err) {
-							console.error(err);
-						} else {
-							interaction.reply({
-								content: `Account created. Our system will call you shortly with a verification code. Please enter that code into \`/verify\``,
-								ephemeral: true
-							}).then(() => {
-								setTimeout(() => {
-									sendVerificationCode(accountNumber);
-								}, 5000); // Wait 5 seconds before calling so user has time to read message
-							});
-						}
-					});
-				}
-			});
-			break;
-		case "verify":
-			verification_code = interaction.options.getString("verification_code");
-			db.get("SELECT * FROM accounts WHERE verification_code = ? AND verified = 0", verification_code, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row) {
-					db.run("UPDATE accounts SET verified = 1 WHERE verification_code = ?", verification_code, (err) => {
-						if (err) {
-							console.error(err);
-						} else {
-							interaction.reply({
-								content: `Account Verified! Your account number is \`${row.id}\`.\nFor help setting up the dialer, feel free to contact a member of staff!`,
-								ephemeral: true
-							})
-						}
-					});
-				} else {
-					interaction.reply({ ephemeral: true, content: "Invalid verification code." });
-				}
-			});
-			break;
-		case "resend":
-			// Find the account thats unverified owned by the user
-			db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row) {
-					sendVerificationCode(row.id);
-					interaction.reply({
-						content: `Verification code resent to ${row.phone}`,
-						ephemeral: true
-					});
-				} else {
-					interaction.reply({ ephemeral: true, content: "You don't have an unverified account." });
-				}
-			});
-			break;
-		case "list":
-			// list all active accounts owned by the user
-			db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
-				if (err) {
-					console.error(err);
-				} else if (rows) {
-					let accountList = "";
-					rows.forEach((row) => {
-						accountList += `\`${row.id}\` - \`${row.phone}\`\n`;
-					});
-					interaction.reply({
-						content: `Active accounts:\n${accountList}`,
-						ephemeral: true
-					});
-				} else {
-					interaction.reply({ ephemeral: true, content: "You don't have any active accounts." });
-				}
-			});
-			break;
-		case "deactivate": // Deactivate an account
-			// Check that account_number is owned by the user, if it is, delete the row
-			accountNumber = interaction.options.getString("account_number");
-			db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ?", interaction.user.id, accountNumber, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row) {
-					db.run("DELETE FROM accounts WHERE id = ?", accountNumber, (err) => {
-						if (err) {
-							console.error(err);
-						} else {
-							interaction.reply({
-								content: `Account \`${accountNumber}\` deactivated.`,
-								ephemeral: true
-							});
-						}
-					});
-				} else {
-					interaction.reply({ ephemeral: true, content: "You don't own that account." });
-				}
-			});
-			break;
-		case "update": // If the account is owned by the user and verified, update the phone number, unverify it, and send verification to the new number. Do the same checks as register
-			accountNumber = interaction.options.getString("account_number");
-			phone_number = interaction.options.getString("phone_number");
-			db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ? AND verified = 1", interaction.user.id, accountNumber, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row) {
+			switch (interaction.commandName) {
+				case "register":
+					phone_number = interaction.options.getString("phone_number");
+					// Check that phone_number is either a 4 digit number starting with 1, a 7 digit number, a 10 digit number, or an 11 digit number starting with 1
 					if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
 						interaction.reply({ ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number" });
 						return;
 					}
-					verification_code = generatePhoneCode();
-					db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, verification_code, accountNumber, (err) => {
+					// check that the user doesnt have any unverified accounts already (check discord_id and verified)
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
 						if (err) {
 							console.error(err);
+						} else if (row) {
+							interaction.reply({ ephemeral: true, content: "You already have an unverified account. Please verify it before creating a new one." });
 						} else {
-							sendVerificationCode(accountNumber);
-							interaction.reply({
-								content: `Account updated. Please verify your account by entering the verification code sent to ${phone_number}`,
-								ephemeral: true
+							accountNumber = generateAccountNumber();
+							verification_code = generatePhoneCode();
+							db.run("INSERT INTO accounts (id, discord_id, verification_code, phone) VALUES (?, ?, ?, ?)", accountNumber, interaction.user.id, verification_code, phone_number, (err) => {
+								if (err) {
+									console.error(err);
+								} else {
+									interaction.reply({
+										content: `Account created. Our system will call you shortly with a verification code. Please enter that code into \`/verify\``,
+										ephemeral: true
+									}).then(() => {
+										setTimeout(() => {
+											sendVerificationCode(accountNumber);
+										}, 5000); // Wait 5 seconds before calling so user has time to read message
+									});
+								}
 							});
 						}
 					});
-				} else {
-					interaction.reply({ content: "You don't own that account.", ephemeral: true });
-				}
-			});
+					break;
+				case "verify":
+					verification_code = interaction.options.getString("verification_code");
+					db.get("SELECT * FROM accounts WHERE verification_code = ? AND verified = 0", verification_code, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							db.run("UPDATE accounts SET verified = 1 WHERE verification_code = ?", verification_code, (err) => {
+								if (err) {
+									console.error(err);
+								} else {
+									interaction.reply({
+										content: `Account Verified! Your account number is \`${row.id}\`.\nFor help setting up the dialer, feel free to contact a member of staff!`,
+										ephemeral: true
+									})
+								}
+							});
+						} else {
+							interaction.reply({ ephemeral: true, content: "Invalid verification code." });
+						}
+					});
+					break;
+				case "resend":
+					// Find the account thats unverified owned by the user
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							sendVerificationCode(row.id);
+							interaction.reply({
+								content: `Verification code resent to ${row.phone}`,
+								ephemeral: true
+							});
+						} else {
+							interaction.reply({ ephemeral: true, content: "You don't have an unverified account." });
+						}
+					});
+					break;
+				case "list":
+					// list all active accounts owned by the user
+					db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
+						if (err) {
+							console.error(err);
+						} else if (rows) {
+							let accountList = "";
+							rows.forEach((row) => {
+								accountList += `\`${row.id}\` - \`${row.phone}\`\n`;
+							});
+							interaction.reply({
+								content: `Active accounts:\n${accountList}`,
+								ephemeral: true
+							});
+						} else {
+							interaction.reply({ ephemeral: true, content: "You don't have any active accounts." });
+						}
+					});
+					break;
+				case "deactivate": // Deactivate an account
+					// Check that account_number is owned by the user, if it is, delete the row
+					accountNumber = interaction.options.getString("account_number");
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ?", interaction.user.id, accountNumber, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							db.run("DELETE FROM accounts WHERE id = ?", accountNumber, (err) => {
+								if (err) {
+									console.error(err);
+								} else {
+									interaction.reply({
+										content: `Account \`${accountNumber}\` deactivated.`,
+										ephemeral: true
+									});
+								}
+							});
+						} else {
+							interaction.reply({ ephemeral: true, content: "You don't own that account." });
+						}
+					});
+					break;
+				case "update": // If the account is owned by the user and verified, update the phone number, unverify it, and send verification to the new number. Do the same checks as register
+					accountNumber = interaction.options.getString("account_number");
+					phone_number = interaction.options.getString("phone_number");
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ? AND verified = 1", interaction.user.id, accountNumber, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
+								interaction.reply({ ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number" });
+								return;
+							}
+							verification_code = generatePhoneCode();
+							db.run("UPDATE accounts SET phone = ?, verified = 0, verification_code = ? WHERE id = ?", phone_number, verification_code, accountNumber, (err) => {
+								if (err) {
+									console.error(err);
+								} else {
+									sendVerificationCode(accountNumber);
+									interaction.reply({
+										content: `Account updated. Please verify your account by entering the verification code sent to ${phone_number}`,
+										ephemeral: true
+									});
+								}
+							});
+						} else {
+							interaction.reply({ content: "You don't own that account.", ephemeral: true });
+						}
+					});
+					break;
+				case "cancel": // Cancel an unverified account
+					// Check if the user has an unverified account, if they do, delete it
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							db.run("DELETE FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err) => {
+								if (err) {
+									console.error(err);
+								} else {
+									interaction.reply({
+										content: "Account creation cancelled.",
+										ephemeral: true
+									});
+								}
+							});
+						} else {
+							interaction.reply({ content: "You don't have an unverified account.", ephemeral: true });
+						}
+					});
+					break;
+			}
 			break;
-		case "cancel": // Cancel an unverified account
-			// Check if the user has an unverified account, if they do, delete it
-			db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
-				if (err) {
-					console.error(err);
-				} else if (row) {
-					db.run("DELETE FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err) => {
+		case Discord.InteractionType.ApplicationCommandAutocomplete:
+			switch (interaction.commandName) {
+				case "deactivate":
+					// Get all active accounts owned by the user
+					db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
 						if (err) {
 							console.error(err);
-						} else {
-							interaction.reply({
-								content: "Account creation cancelled.",
-								ephemeral: true
+						} else if (rows) {
+							let accountList = [];
+							rows.forEach((row) => {
+								accountList.push({
+									name: `${row.id} - ${row.phone}`,
+									value: row.id
+								});
+							});
+							interaction.respond({
+								choices: accountList
 							});
 						}
 					});
-				} else {
-					interaction.reply({ content: "You don't have an unverified account.", ephemeral: true });
+					break;
 				}
-			});
 			break;
 	}
 });

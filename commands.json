@@ -68,5 +68,9 @@
 		"name": "list",
 		"description": "List all active accounts",
 		"type": 1
+	},
+	{
+		"name": "cancel",
+		"description": "Cancel verification and account number creation if you have one in-progress"
 	}
 ]

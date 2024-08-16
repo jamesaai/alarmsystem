@@ -396,6 +396,27 @@ client.on("interactionCreate", async (interaction) => {
 				}
 			});
 			break;
+		case "cancel": // Cancel an unverified account
+			// Check if the user has an unverified account, if they do, delete it
+			db.get("SELECT * FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err, row) => {
+				if (err) {
+					console.error(err);
+				} else if (row) {
+					db.run("DELETE FROM accounts WHERE discord_id = ? AND verified = 0", interaction.user.id, (err) => {
+						if (err) {
+							console.error(err);
+						} else {
+							interaction.reply({
+								content: "Account creation cancelled.",
+								ephemeral: true
+							});
+						}
+					});
+				} else {
+					interaction.reply({ content: "You don't have an unverified account.", ephemeral: true });
+				}
+			});
+			break;
 	}
 });
 

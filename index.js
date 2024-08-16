@@ -432,7 +432,7 @@ client.on("interactionCreate", async (interaction) => {
 							rows.forEach((row) => {
 								accountList.push({
 									name: `${row.id} - ${row.phone}`,
-									value: row.id
+									value: `${row.id}`
 								});
 							});
 							interaction.respond(accountList);

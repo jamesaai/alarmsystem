@@ -435,9 +435,7 @@ client.on("interactionCreate", async (interaction) => {
 									value: row.id
 								});
 							});
-							interaction.respond({
-								choices: accountList
-							});
+							interaction.respond(accountList);
 						}
 					});
 					break;

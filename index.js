@@ -36,6 +36,12 @@ const client = new Discord.Client({
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+	// Log all requests with IP address
+	console.log(`${colors.cyan("[EXPRESS]")} ${req.ip} ${req.method} ${req.url}`);
+	next();
+});
+
 // Vars
 
 var handledTransactions = [];

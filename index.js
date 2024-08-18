@@ -148,10 +148,16 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 								if (err) {
 									console.error(err);
 								} else if (row) {
-									runCommand(`/var/lib/asterisk/bin/originate ${row.to} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
-										console.log(`Alert sent to ${row.linked_to}`);
-									}).catch((error) => {
-										console.error(error);
+									db.get("SELECT * FROM accounts WHERE id = ?", row.linked_to, (err, row) => {
+										if (err) {
+											console.error(err);
+										} else if (row) {
+											runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+												console.log(`TTS sent to ${row.to}`);
+											}).catch((error) => {
+												console.error(error);
+											});
+										}
 									});
 								}
 							});
@@ -203,10 +209,16 @@ function sendTTS(accountNumber, transaction, text) {
 								if (err) {
 									console.error(err);
 								} else if (row) {
-									runCommand(`/var/lib/asterisk/bin/originate ${row.linked_to} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
-										console.log(`TTS sent to ${row.to}`);
-									}).catch((error) => {
-										console.error(error);
+									db.get("SELECT * FROM accounts WHERE id = ?", row.linked_to, (err, row) => {
+										if (err) {
+											console.error(err);
+										} else if (row) {
+											runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+												console.log(`TTS sent to ${row.to}`);
+											}).catch((error) => {
+												console.error(error);
+											});
+										}
 									});
 								}
 							});

@@ -468,6 +468,9 @@ client.on("interactionCreate", async (interaction) => {
 										if (row) {
 											return interaction.reply({ content: "Those accounts are already linked.", ephemeral: true });
 										} else {
+											if (accountNumberFrom == accountNumberTo) {
+												return interaction.reply({ content: "You can't link an account to itself.", ephemeral: true });
+											}
 											db.run("INSERT INTO links (linked_from, linked_to, discord_id) VALUES (?, ?, ?)", accountNumberFrom, accountNumberTo, interaction.user.id, (err) => {
 												if (err) {
 													console.error(err);

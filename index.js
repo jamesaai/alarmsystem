@@ -382,9 +382,15 @@ client.on("interactionCreate", async (interaction) => {
 								if (err) {
 									console.error(err);
 								} else {
-									interaction.reply({
-										content: `Account \`${accountNumber}\` deactivated.`,
-										ephemeral: true
+									db.run("DELETE FROM links WHERE linked_from = ? OR linked_to = ?", accountNumber, accountNumber, (err) => {
+										if (err) {
+											console.error(err);
+										} else {
+											interaction.reply({
+												content: "Account deactivated.",
+												ephemeral: true
+											});
+										}
 									});
 								}
 							});
@@ -478,6 +484,53 @@ client.on("interactionCreate", async (interaction) => {
 							});
 						} else {
 							return interaction.reply({ content: "You don't own that account.", ephemeral: true });
+						}
+					});
+					break;
+				case "unlink": // Unlink two account numbers, only allow unlinking if both accounts are owned by the user
+					// check that from and to are owned by the user, and linked, if they are, delete the row
+					accountNumberFrom = interaction.options.getString("from");
+					accountNumberTo = interaction.options.getString("to");
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ?", interaction.user.id, accountNumberFrom, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ?", interaction.user.id, accountNumberTo, (err, row) => {
+								if (err) {
+									console.error(err);
+								} else if (row) {
+									db.run("DELETE FROM links WHERE linked_from = ? AND linked_to = ?", accountNumberFrom, accountNumberTo, (err) => {
+										if (err) {
+											console.error(err);
+										} else {
+											return interaction.reply({ content: "Accounts unlinked.", ephemeral: true });
+										}
+									});
+								} else {
+									return interaction.reply({ content: "You don't own that account.", ephemeral: true });
+								}
+							});
+						} else {
+							return interaction.reply({ content: "You don't own that account.", ephemeral: true });
+						}
+					});
+					break;
+				case "links": // a list of linked accounts owned by the user
+					// get all linked accounts owned by the user
+					db.all("SELECT * FROM links WHERE discord_id = ?", interaction.user.id, (err, rows) => {
+						if (err) {
+							console.error(err);
+						} else if (rows) {
+							let linkList = "";
+							rows.forEach((row) => {
+								linkList += `\`${row.linked_from}\` ➡ \`${row.linked_to}\`\n`;
+							});
+							interaction.reply({
+								content: `Linked accounts:\n${linkList}`,
+								ephemeral: true
+							});
+						} else {
+							interaction.reply({ content: "You don't have any linked accounts.", ephemeral: true });
 						}
 					});
 					break;

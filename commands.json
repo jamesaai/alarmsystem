@@ -72,5 +72,47 @@
 	{
 		"name": "cancel",
 		"description": "Cancel verification and account number creation if you have one in-progress"
+	},
+	{
+		"name": "link",
+		"description": "Link two account numbers together so someone else can get calls for your account number too",
+		"type": 1,
+		"options": [
+			{
+				"name": "from",
+				"description": "Account number to receive alerts from",
+				"type": 3,
+				"required": true
+			},
+			{
+				"name": "to",
+				"description": "Account number to forward alerts to",
+				"type": 3,
+				"required": true
+			}
+		]
+	},
+	{
+		"name": "unlink",
+		"description": "Unlink two account numbers",
+		"type": 1,
+		"options": [
+			{
+				"name": "from",
+				"description": "Account number to receive alerts from",
+				"type": 3,
+				"required": true
+			},
+			{
+				"name": "to",
+				"description": "Account number to forward alerts to",
+				"type": 3,
+				"required": true
+			}
+		]
+	},
+	{
+		"name": "links",
+		"description": "Get a list of linked accounts tied to your discord account"
 	}
 ]

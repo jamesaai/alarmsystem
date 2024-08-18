@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS 'links' (
+	'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+	'linked_from' TEXT NOT NULL,
+	'linked_to' TEXT NOT NULL,
+	'discord_id' TEXT NOT NULL
+)

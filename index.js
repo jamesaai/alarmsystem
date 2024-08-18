@@ -143,6 +143,18 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 								console.error(error);
 								reject(error);
 							});
+
+							db.get("SELECT * FROM links WHERE linked_from = ?", accountNumber, (err, row) => {
+								if (err) {
+									console.error(err);
+								} else if (row) {
+									runCommand(`/var/lib/asterisk/bin/originate ${row.to} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+										console.log(`Alert sent to ${row.linked_to}`);
+									}).catch((error) => {
+										console.error(error);
+									});
+								}
+							});
 						}).catch((error) => {
 							console.error(error);
 							reject(error);
@@ -185,6 +197,18 @@ function sendTTS(accountNumber, transaction, text) {
 							}).catch((error) => {
 								console.error(error);
 								reject(error);
+							});
+
+							db.get("SELECT * FROM links WHERE linked_from = ?", accountNumber, (err, row) => {
+								if (err) {
+									console.error(err);
+								} else if (row) {
+									runCommand(`/var/lib/asterisk/bin/originate ${row.linked_to} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+										console.log(`TTS sent to ${row.to}`);
+									}).catch((error) => {
+										console.error(error);
+									});
+								}
 							});
 						}).catch((error) => {
 							console.error(error);
@@ -415,6 +439,45 @@ client.on("interactionCreate", async (interaction) => {
 							});
 						} else {
 							interaction.reply({ content: "You don't have an unverified account.", ephemeral: true });
+						}
+					});
+					break;
+				case "link": // Link two account numbers together, only allow linking if both accounts are owned by the user and verified
+					// check that both account numbers from and to are owned by the user and verified
+					accountNumberFrom = interaction.options.getString("from");
+					accountNumberTo = interaction.options.getString("to");
+					db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ? AND verified = 1", interaction.user.id, accountNumberFrom, (err, row) => {
+						if (err) {
+							console.error(err);
+						} else if (row) {
+							db.get("SELECT * FROM accounts WHERE discord_id = ? AND id = ? AND verified = 1", interaction.user.id, accountNumberTo, (err, row) => {
+								if (err) {
+									console.error(err);
+								} else if (row) {
+									// check that the link doesnt already exist in `link`
+									db.get("SELECT * FROM links WHERE linked_from = ? AND linked_to = ?", accountNumberFrom, accountNumberTo, (err, row) => {
+										if (err) {
+											console.error(err);
+										}
+										if (row) {
+											return interaction.reply({ content: "Those accounts are already linked.", ephemeral: true });
+										} else {
+											db.run("INSERT INTO links (linked_from, linked_to, discord_id) VALUES (?, ?, ?)", accountNumberFrom, accountNumberTo, interaction.user.id, (err) => {
+												if (err) {
+													console.error(err);
+												} else {
+													return interaction.reply({ content: "Accounts linked.", ephemeral: true });
+												}
+											});
+										}
+									});
+
+								} else {
+									return interaction.reply({ content: "You don't own that account.", ephemeral: true });
+								}
+							});
+						} else {
+							return interaction.reply({ content: "You don't own that account.", ephemeral: true });
 						}
 					});
 					break;

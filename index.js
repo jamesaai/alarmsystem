@@ -97,7 +97,7 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 			// Check if the account exists and is verified
 			// Account exists and is verified
 			// Send the alert
-			runCommand(process.env.TTS_COMMAND.replace("%s", `${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
+			runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 					runCommand(`rm /tmp/${transaction}.wav`)
 					// strip extension from filename
@@ -143,7 +143,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(process.env.TTS_COMMAND.replace("%s", `${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
+					runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
@@ -204,7 +204,7 @@ function sendTTS(accountNumber, transaction, text) {
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(process.env.TTS_COMMAND.replace("%s", transaction), `Hello. This is an automated call from KCA SecuriNet Monitoring.`).then((output) => {
+					runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring.`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-tts.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
@@ -258,7 +258,7 @@ function sendVerificationCode(account) {
 			console.error(err);
 		} else if (row) {
 			// Send verification code to phone number
-			runCommand(process.env.TTS_COMMAND.replace("%s", `${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
+			runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {
 					runCommand(`rm /tmp/${account}-code.wav`)
 					// strip extension from filename

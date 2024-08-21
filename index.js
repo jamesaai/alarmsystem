@@ -48,10 +48,9 @@ var handledTransactions = [];
 
 // Funcs
 
-// runCommand(command) // Run a shell command and return the output
-function runCommand(command) {
+function runCommand(command, stdin) {
 	return new Promise((resolve, reject) => {
-		exec(command, (error, stdout, stderr) => {
+		const child = exec(command, (error, stdout, stderr) => {
 			if (error) {
 				console.error(`exec error: ${error}`);
 				reject(error);
@@ -59,10 +58,12 @@ function runCommand(command) {
 				resolve(stdout);
 			}
 		});
+		child.stdin.write(stdin);
+		child.stdin.end();
 	});
 }
 
-
+// runcommand but i can pass stdin as an argument
 
 // generateAccountNumber() // Returns a random 10 digit number, checks if it already exists in the database, and loops until it gets one that doesn't exist
 function generateAccountNumber() {
@@ -91,7 +92,7 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 			// Check if the account exists and is verified
 			// Account exists and is verified
 			// Send the alert
-			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}" -o /tmp/${transaction}.wav`).then((output) => {
+			runCommand(process.env.TTS_COMMAND.replace("%s", transaction), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 					runCommand(`rm /tmp/${transaction}.wav`)
 					// strip extension from filename
@@ -137,7 +138,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}" -o /tmp/${transaction}.wav`).then((output) => {
+					runCommand(process.env.TTS_COMMAND.replace("%s", transaction), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
@@ -198,7 +199,7 @@ function sendTTS(accountNumber, transaction, text) {
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. ${text}" -o /tmp/${transaction}.wav`).then((output) => {
+					runCommand(process.env.TTS_COMMAND.replace("%s", transaction), `Hello. This is an automated call from KCA SecuriNet Monitoring.`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-tts.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
@@ -252,7 +253,7 @@ function sendVerificationCode(account) {
 			console.error(err);
 		} else if (row) {
 			// Send verification code to phone number
-			runCommand(`flite -t "Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}" -o /tmp/${account}-code.wav`).then((output) => {
+			runCommand(process.env.TTS_COMMAND.replace("%s", transaction), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {
 					runCommand(`rm /tmp/${account}-code.wav`)
 					// strip extension from filename

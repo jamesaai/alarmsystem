@@ -58,8 +58,10 @@ function runCommand(command, stdin) {
 				resolve(stdout);
 			}
 		});
-		child.stdin.write(stdin);
-		child.stdin.end();
+		if (stdin) {
+			child.stdin.write(stdin);
+			child.stdin.end();
+		}
 	});
 }
 

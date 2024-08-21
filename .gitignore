@@ -131,3 +131,5 @@ dist
 
 #sqlite
 database.db
+tts/*
+!tts/.gitkeep

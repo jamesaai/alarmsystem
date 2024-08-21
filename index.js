@@ -55,9 +55,6 @@ function runCommand(command, stdin) {
 				console.error(`exec error: ${error}`);
 				reject(error);
 			} else {
-				if (stderr) {
-					console.error(`stderr: ${stderr}`);
-				}
 				resolve(stdout);
 			}
 		});

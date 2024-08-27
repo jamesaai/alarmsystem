@@ -1,0 +1,10 @@
+[
+	{
+		"name": "Piper - Amy (Default)",
+		"value": "piper -m /opt/alarm-monitoring/tts/en_US-amy-medium.onnx -f %s"
+	},
+	{
+		"name": "Flite - OG SecuriNet Voice",
+		"value": "flite -o %s"
+	}
+]

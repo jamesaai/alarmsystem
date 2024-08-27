@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 const { exec } = require("child_process");
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("./database.db");
+const ttsCommands = require("./tts.json")
 // Find all migrations .sql files in ./migrations, execute them in order
 db.on("open", () => {
 	console.log(`${colors.cyan("[DB]")} Connected to the database`);
@@ -94,7 +95,7 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 			// Check if the account exists and is verified
 			// Account exists and is verified
 			// Send the alert
-			runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
+			runCommand(ttsCommands[0].replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 					runCommand(`rm /tmp/${transaction}.wav`)
 					// strip extension from filename
@@ -140,12 +141,12 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
+					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
 
-							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDw5OTk5Pg=="`).then(() => {
 								console.log(`Alert sent to ${row.phone}`);
 								resolve();
 							}).catch((error) => {
@@ -161,7 +162,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 										if (err) {
 											console.error(err);
 										} else if (row) {
-											runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+											runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-alert "IktDQSBTZWN1cmlOZXQiIDw5OTk5Pg=="`).then(() => {
 												console.log(`Alert sent to ${row.phone}`);
 											}).catch((error) => {
 												console.error(error);
@@ -201,12 +202,12 @@ function sendTTS(accountNumber, transaction, text) {
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring.`).then((output) => {
+					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring.`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-tts.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
 
-							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+							runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDw5OTk5Pg=="`).then(() => {
 								console.log(`TTS sent to ${row.phone}`);
 								resolve();
 							}).catch((error) => {
@@ -222,7 +223,7 @@ function sendTTS(accountNumber, transaction, text) {
 										if (err) {
 											console.error(err);
 										} else if (row) {
-											runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+											runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${transaction}-tts "IktDQSBTZWN1cmlOZXQiIDw5OTk5Pg=="`).then(() => {
 												console.log(`TTS sent to ${row.to}`);
 											}).catch((error) => {
 												console.error(error);
@@ -255,12 +256,12 @@ function sendVerificationCode(account) {
 			console.error(err);
 		} else if (row) {
 			// Send verification code to phone number
-			runCommand(process.env.TTS_COMMAND.replace("%s", `/tmp/${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
+			runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {
 					runCommand(`rm /tmp/${account}-code.wav`)
 					// strip extension from filename
 
-					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${account}-verification "IktDQSBTZWN1cmlOZXQiIDwxNDQ3MjAwNDQ4OD4="`).then(() => {
+					runCommand(`/var/lib/asterisk/bin/originate ${row.phone} roblox.s.1 0 0 /tmp/${account}-verification "IktDQSBTZWN1cmlOZXQiIDw5OTk5Pg=="`).then(() => {
 						console.log(`Verification code sent to ${row.phone}`);
 					})
 				})
@@ -282,6 +283,27 @@ client.on("ready", async () => {
 	console.log(`${colors.cyan("[Discord]")} Logged in as ${client.user.tag}`);
 
 	const commands = require("./commands.json");
+	commands.push({
+		name: "voice",
+		description: "Set the TTS voice for your account",
+		type: 1,
+		options: [
+			{
+				"name": "account_number",
+				"description": "The account number to deactivate",
+				"type": 3,
+				"required": true,
+				"autocomplete": true
+			},
+			{
+				name: "voice",
+				description: "The voice to use for TTS",
+				type: 3,
+				required: true,
+				choices: ttsCommands
+			}
+		]
+	})
 	//Register commands
 	await (async () => {
 		try {
@@ -562,7 +584,7 @@ client.on("interactionCreate", async (interaction) => {
 			break;
 		case Discord.InteractionType.ApplicationCommandAutocomplete:
 			switch (interaction.commandName) {
-				case "deactivate":
+				case "deactivate" || "voice":
 					// Get all active accounts owned by the user
 					db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
 						if (err) {

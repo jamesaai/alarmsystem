@@ -140,8 +140,10 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 					reject(err);
 				} else if (row) {
 					if (new Date(row.cooldown) > new Date()) {
+						console.log("Cooldown")
 						reject("Cooldown");
 					} else {
+						console.log("Not cooldown")
 						newCooldown = new Date();
 						newCooldown.setMinutes(newCooldown.getMinutes() + 5);
 

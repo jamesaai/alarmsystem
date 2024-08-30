@@ -139,6 +139,18 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 					console.error(err);
 					reject(err);
 				} else if (row) {
+					if (new Date(row.cooldown) > new Date()) {
+						reject("Cooldown");
+					} else {
+						newCooldown = new Date();
+						newCooldown.setMinutes(newCooldown.getMinutes() + 5);
+
+						db.run("UPDATE accounts SET cooldown = ? WHERE id = ?", newCooldown.toISOString() ,accountNumber, (err) => {
+							if (err) {
+								console.error(err);
+							}
+						});
+					}
 					// Account exists and is verified
 					// Send the alert
 					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
@@ -255,6 +267,18 @@ function sendVerificationCode(account) {
 		if (err) {
 			console.error(err);
 		} else if (row) {
+			if (new Date(row.cooldown) > new Date()) {
+				reject("Cooldown");
+			} else {
+				newCooldown = new Date();
+				newCooldown.setMinutes(newCooldown.getMinutes() + 5);
+
+				db.run("UPDATE accounts SET cooldown = ? WHERE id = ?", newCooldown.toISOString() ,accountNumber, (err) => {
+					if (err) {
+						console.error(err);
+					}
+				});
+			}
 			// Send verification code to phone number
 			runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {

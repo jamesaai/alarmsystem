@@ -654,7 +654,10 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 			} else {
 
 				// send alert to accountNumber
-				sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
+				sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then((resp) => {
+					if(resp == "Cooldown") {
+						return res.status(429).send("Cooldown");
+					}
 					res.status(204).send();
 				}).catch((error) => {
 					res.status(500).send(error);

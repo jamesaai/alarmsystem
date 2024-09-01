@@ -93,6 +93,12 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 		} else {
 			handledTransactions.push(transaction);
 			// Check if the account exists and is verified
+
+			if (placeName.length > (process.env.MAX_LENGTH || 500) || systemName.length > (process.env.MAX_LENGTH || 500) || zoneName.length > (process.env.MAX_LENGTH || 500) || event.length > (process.env.MAX_LENGTH || 500)) {
+				console.log(`${colors.red("[ERROR]")} Input too long.`);
+				console.log(`${colors.red("[ERROR]")} PlaceName: ${placeName.length} SystemName: ${systemName.length} ZoneName: ${zoneName.length} EventName: ${event.length}`);
+				reject("Input too long");
+			}
 			// Account exists and is verified
 			// Send the alert
 			runCommand(ttsCommands[0].replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
@@ -128,6 +134,12 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 }
 
 function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber, zoneName, event) {
+	// replace any non alphanumeric characters with nothing in all inputs
+	placeName = placeName.replace(/[^a-zA-Z0-9]/g, "");
+	systemName = systemName.replace(/[^a-zA-Z0-9]/g, "");
+	zoneName = zoneName.replace(/[^a-zA-Z0-9]/g, "");
+	event = event.replace(/[^a-zA-Z0-9]/g, "");
+	zoneNumber = zoneNumber.replace(/[^a-zA-Z0-9]/g, "");
 	return new Promise((resolve, reject) => {
 		if (handledTransactions.includes(transaction)) {
 			resolve(); // Duplicate transaction
@@ -153,6 +165,14 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 							}
 						});
 					}
+
+					// Check if any of the inputs are over 500 characters, if so reject
+					if (placeName.length > (process.env.MAX_LENGTH || 500) || systemName.length > (process.env.MAX_LENGTH || 500) || zoneName.length > (process.env.MAX_LENGTH || 500) || event.length > (process.env.MAX_LENGTH || 500)) {
+						console.log(`${colors.red("[ERROR]")} Input too long.`);
+						console.log(`${colors.red("[ERROR]")} PlaceName: ${placeName.length} SystemName: ${systemName.length} ZoneName: ${zoneName.length} EventName: ${event.length}`);
+						reject("Input too long");
+					}
+
 					// Account exists and is verified
 					// Send the alert
 					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
@@ -635,6 +655,13 @@ client.on("interactionCreate", async (interaction) => {
 
 app.post("/api/v1/alert", (req, res) => { // Legacy alert endpoint
 	console.log(req.body);
+
+	// Check length of inputs, if any are over 500 characters, return 400
+	if (req.body.placeName.length > (process.env.MAX_LENGTH || 500) || req.body.systemName.length > (process.env.MAX_LENGTH || 500) || req.body.zoneName.length > (process.env.MAX_LENGTH || 500) || req.body.event.length > (process.env.MAX_LENGTH || 500)) {
+		console.log(`${colors.red("[ERROR]")} Input too long. From ${req.ip}`);
+		console.log(`${colors.red("[ERROR]")} PlaceName: ${req.body.placeName.length} SystemName: ${req.body.systemName.length} ZoneName: ${req.body.zoneName.length} EventName: ${req.body.event.length}`);
+		res.status(400).send("Input too long");
+	}
 	// send no content response
 	sendAlert(req.body.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then(() => {
 		res.status(204).send();
@@ -644,8 +671,14 @@ app.post("/api/v1/alert", (req, res) => { // Legacy alert endpoint
 })
 
 app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
+	// Check length of inputs, if any are over 500 characters, return 400
 	switch (req.params.brand) {
 		case "kca":
+			if (req.body.placeName.length > (process.env.MAX_LENGTH || 500) || req.body.systemName.length > (process.env.MAX_LENGTH || 500) || req.body.zoneName.length > (process.env.MAX_LENGTH || 500) || req.body.event.length > (process.env.MAX_LENGTH || 500)) {
+				console.log(`${colors.red("[ERROR]")} Input too long. From ${req.ip}`);
+				console.log(`${colors.red("[ERROR]")} PlaceName: ${req.body.placeName.length} SystemName: ${req.body.systemName.length} ZoneName: ${req.body.zoneName.length} EventName: ${req.body.event.length}`);
+				res.status(400).send("Input too long");
+			}
 			if (req.params.accountNumber == "DEMOTEST") {
 				// Generate the audio files, then post it to discord
 				sendDemo(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event, req.body.placeId).then(() => {
@@ -673,6 +706,12 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 });
 
 app.post("/api/v1/tts", (req, res) => {
+	// Check length of inputs, if any are over 500 characters, return 400
+	if (req.body.text.length > (process.env.MAX_LENGTH || 500)) {
+		console.log(`${colors.red("[ERROR]")} Input too long. From ${req.ip}`);
+		console.log(`${colors.red("[ERROR]")} Text: ${req.body.text.length}`);
+		res.status(400).send("Input too long");
+	}
 	console.log(req.body);
 	// send no content response
 	sendTTS(req.body.accountNumber, req.body.transaction, req.body.text).then(() => {

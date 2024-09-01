@@ -139,7 +139,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 	systemName = systemName.replace(/[^a-zA-Z0-9]/g, "");
 	zoneName = zoneName.replace(/[^a-zA-Z0-9]/g, "");
 	event = event.replace(/[^a-zA-Z0-9]/g, "");
-	zoneNumber = zoneNumber.replace(/[^a-zA-Z0-9]/g, "");
+	//zoneNumber = zoneNumber.replace(/[^a-zA-Z0-9]/g, "");
 	return new Promise((resolve, reject) => {
 		if (handledTransactions.includes(transaction)) {
 			resolve(); // Duplicate transaction

@@ -2,7 +2,9 @@ const colors = require("colors");
 require("dotenv").config();
 const fs = require("fs");
 const express = require("express");
+const expressWs = require("express-ws");
 const app = express();
+const ws = expressWs(app);
 const port = process.env.PORT || 3000;
 const { exec } = require("child_process");
 const sqlite3 = require("sqlite3").verbose();
@@ -10,12 +12,19 @@ const db = new sqlite3.Database("./database.db");
 const ttsCommands = require("./tts.json")
 // Find all migrations .sql files in ./migrations, execute them in order
 db.on("open", () => {
+	db.on("error", (err) => {
+		console.log(`${colors.red("[DB]")} ${err}`);
+	});
 	console.log(`${colors.cyan("[DB]")} Connected to the database`);
 	fs.readdirSync("./migrations").forEach((file) => {
 		if (file.endsWith(".sql")) {
 			const migration = fs.readFileSync(`./migrations/${file}`, "utf8");
-			db.run(migration);
+			try {
+			db.run(migration)
 			console.log(`${colors.cyan("[DB]")} ${file} ${colors.green("executed")}`);
+			} catch (error) {
+				console.log(`${colors.red("[DB]")} ${file} ${colors.red("failed")}`);
+			}
 		}
 	});
 });
@@ -42,6 +51,8 @@ app.use((req, res, next) => {
 	console.log(`${colors.cyan("[EXPRESS]")} ${req.ip} ${req.method} ${req.url}`);
 	next();
 });
+
+
 
 // Vars
 
@@ -719,6 +730,96 @@ app.post("/api/v1/tts", (req, res) => {
 	}).catch((error) => {
 		res.status(500).send(error);
 		console.log(error.stack)
+	});
+});
+
+app.ws("/api/v1/websocket/:accountNumber", (ws, req) => {
+	var userData;
+	// Check if account number is valid and is verified
+	db.get("SELECT * FROM accounts WHERE id = ? AND verified = 1", req.params.accountNumber, (err, row) => {
+		if (err) {
+			console.error(err);
+			ws.send(JSON.stringify({status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString()}));
+			ws.close();
+			return;
+		} else if (row) {
+			userData = row;
+			ws.send(JSON.stringify({status: "connected", code: 200, timestamp: new Date().toISOString()}));
+		} else {
+			ws.send(JSON.stringify({status: "error", code: 404, message: "Account not found or not verified", timestamp: new Date().toISOString()}));
+			ws.close();
+			return;
+		}
+	});
+
+	ws.on("message", (msg) => {
+		// Validate json
+		try {
+			msg = JSON.parse(msg);
+		} catch (error) {
+			console.error(error);
+			ws.send(JSON.stringify({status: "error", message: "Invalid JSON", timestamp: new Date().toISOString()}));
+			return;
+		}
+		switch(msg.action) {
+			case "close":
+				ws.send(JSON.stringify({response: "closed", timestamp: new Date().toISOString()}));
+				ws.close();
+				break;
+			case "ping":
+				ws.send(JSON.stringify({response: "pong", timestamp: new Date().toISOString()}));
+				break;
+			case "getStatus":
+				// Get the armState column from the account database
+				db.get("SELECT armState FROM accounts WHERE id = ?", req.params.accountNumber, (err, row) => {
+					if (err) {
+						console.error(err);
+						ws.send(JSON.stringify({action: msg.action, status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString()}));
+					} else {
+						ws.send(JSON.stringify({action: msg.action, status: "success", code: 200, armState: row.armState, timestamp: new Date().toISOString()}));
+					}
+				});
+				break;
+			case "report":
+				console.log(msg)
+				// Check length of inputs, if any are over 500 characters, return 400
+				if (msg.data.placeName.length > (process.env.MAX_LENGTH || 500) || msg.data.systemName.length > (process.env.MAX_LENGTH || 500) || msg.data.zoneName.length > (process.env.MAX_LENGTH || 500) || msg.data.event.length > (process.env.MAX_LENGTH || 500)) {
+					console.log(`${colors.red("[ERROR]")} Input too long.`);
+					console.log(`${colors.red("[ERROR]")} PlaceName: ${msg.data.placeName.length} SystemName: ${msg.data.systemName.length} ZoneName: ${msg.data.zoneName.length} EventName: ${msg.data.event.length}`);
+					ws.send(JSON.stringify({ action: msg.action, status: "error", code: 400, message: "Input too long", timestamp: new Date().toISOString() }));
+					return;
+				}
+
+				// Check cooldown
+				if (new Date(userData.cooldown) > new Date()) {
+					console.log("Cooldown")
+					ws.send(JSON.stringify({ action: msg.action, status: "error", code: 429, message: "Cooldown", timestamp: new Date().toISOString() }));
+					return;
+				} else {
+					console.log("Not cooldown")
+					newCooldown = new Date();
+					newCooldown.setMinutes(newCooldown.getMinutes() + 5);
+				}
+
+				sendAlert(req.params.accountNumber, generateTransactionNumber(), msg.data.placeName, msg.data.systemName, msg.data.zoneNumber, msg.data.zoneName, msg.data.event).then(() => {
+					ws.send(JSON.stringify({ action: msg.action, status: "success", code: 200, timestamp: new Date().toISOString() }));
+				}).catch((error) => {
+					ws.send(JSON.stringify({ action: msg.action, status: "error", code: 500, message: error, timestamp: new Date().toISOString() }));
+				});
+				break;
+			case "updateState":
+				// Update the armState column in the account database
+				db.run("UPDATE accounts SET armState = ? WHERE id = ?", msg.armState, req.params.accountNumber, (err) => {
+					if (err) {
+						console.error(err);
+						ws.send(JSON.stringify({action: msg.action, status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString()}));
+					} else {
+						ws.send(JSON.stringify({action: msg.action, status: "success", code: 200, timestamp: new Date().toISOString()}));
+					}
+				});
+				break;
+
+		}
 	});
 });
 

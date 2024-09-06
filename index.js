@@ -60,6 +60,28 @@ var handledTransactions = [];
 
 // Funcs
 
+function sanitizeForTTS(input) {
+    // Remove any HTML tags and other potentially dangerous characters
+    let sanitized = input.replace(/<[^>]*>?/gm, "");  // Remove HTML tags
+    sanitized = sanitized.replace(/[^\w\s,.!?'-]/g, "");  // Allow only basic punctuation and word characters
+    
+    // Replace multiple spaces with a single space
+    sanitized = sanitized.replace(/\s\s+/g, " ");
+    
+    // Trim extra whitespace from the beginning and end
+    sanitized = sanitized.trim();
+    
+    // Optionally, you could replace or normalize abbreviations
+    sanitized = sanitized.replace(/\bMr\.\b/g, "Mister");
+    sanitized = sanitized.replace(/\bMrs\.\b/g, "Misses");
+    sanitized = sanitized.replace(/\bDr\.\b/g, "Doctor");
+    sanitized = sanitized.replace(/\bSt\.\b/g, "Saint");
+
+    // Additional logic can go here (e.g., profanity filtering, replacing unsupported characters)
+    
+    return sanitized;
+}
+
 function runCommand(command, stdin) {
 	return new Promise((resolve, reject) => {
 		const child = exec(command, (error, stdout, stderr) => {
@@ -234,6 +256,8 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 }
 
 function sendTTS(accountNumber, transaction, text) {
+	// Set textFiltered to a string safe for TTS input
+	const textFiltered = sanitizeForTTS(text)
 	return new Promise((resolve, reject) => {
 		if (handledTransactions.includes(transaction)) {
 			resolve(); // Duplicate transaction
@@ -247,7 +271,7 @@ function sendTTS(accountNumber, transaction, text) {
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring.`).then((output) => {
+					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${textFiltered}`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-tts.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename

@@ -19,12 +19,8 @@ db.on("open", () => {
 	fs.readdirSync("./migrations").forEach((file) => {
 		if (file.endsWith(".sql")) {
 			const migration = fs.readFileSync(`./migrations/${file}`, "utf8");
-			try {
 			db.run(migration)
 			console.log(`${colors.cyan("[DB]")} ${file} ${colors.green("executed")}`);
-			} catch (error) {
-				console.log(`${colors.red("[DB]")} ${file} ${colors.red("failed")}`);
-			}
 		}
 	});
 });
@@ -134,7 +130,7 @@ function sendDemo(accountNumber, transaction, placeName, systemName, zoneNumber,
 			}
 			// Account exists and is verified
 			// Send the alert
-			runCommand(ttsCommands[0].replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
+			runCommand(ttsCommands[0].command.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 					runCommand(`rm /tmp/${transaction}.wav`)
 					// strip extension from filename
@@ -208,7 +204,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 
 					// Account exists and is verified
 					// Send the alert
-					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
+					runCommand(ttsCommands[row.ttsOverride].command.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${systemName} has reported a ${event}, ZONE ${zoneNumber}, ${zoneName}, at ${placeName}`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-alert.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
@@ -271,7 +267,7 @@ function sendTTS(accountNumber, transaction, text) {
 				} else if (row) {
 					// Account exists and is verified
 					// Send the alert
-					runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${textFiltered}`).then((output) => {
+					runCommand(ttsCommands[row.ttsOverride].command.replace("%s", `/tmp/${transaction}.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. ${textFiltered}`).then((output) => {
 						runCommand(`ffmpeg -y -i /tmp/${transaction}.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${transaction}-tts.wav`).then(() => {
 							runCommand(`rm /tmp/${transaction}.wav`)
 							// strip extension from filename
@@ -337,7 +333,7 @@ function sendVerificationCode(account) {
 				});
 			}
 			// Send verification code to phone number
-			runCommand(ttsCommands[row.ttsOverride].value.replace("%s", `/tmp/${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
+			runCommand(ttsCommands[row.ttsOverride].command.replace("%s", `/tmp/${account}-code.wav`), `Hello. This is an automated call from KCA SecuriNet Monitoring. To verify your phone number, use the slash verify command on Discord. Your verification code is ${row.verification_code.split("").join(", ")}. Repeating, your code is ${row.verification_code.split("").join(", ")}. Once again, your code is ${row.verification_code.split("").join(", ")}`).then((output) => {
 				runCommand(`ffmpeg -y -i /tmp/${account}-code.wav -ar 8000 -ac 1 -c:a pcm_s16le /tmp/${account}-verification.wav`).then(() => {
 					runCommand(`rm /tmp/${account}-code.wav`)
 					// strip extension from filename
@@ -661,29 +657,43 @@ client.on("interactionCreate", async (interaction) => {
 						}
 					});
 					break;
+				case "voice":
+					accountNumber = interaction.options.getString("account_number");
+					db.get("SELECT * FROM accounts WHERE id = ?;", accountNumber, (err, row) => {
+						if (err) {
+							console.error(err)
+						} else if (row) {
+							newVoice = interaction.options.getString("voice")
+							if (!ttsCommands[newVoice]) return interaction.reply({ content: "Thats not a valid option", ephemeral: true });
+							console.log(newVoice)
+							db.run("UPDATE accounts SET ttsOverride = ? WHERE id = ?", newVoice, accountNumber, (row, err) => {
+								if (err) {
+									console.error(err)
+									return interaction.reply({ content: "An error occured, Contact system administrator", ephemeral: true });
+								}
+								return interaction.reply({ content: "Changed!", ephemeral: true })
+							})
+						}
+					})
+					break;
 			}
 			break;
 		case Discord.InteractionType.ApplicationCommandAutocomplete:
-			switch (interaction.commandName) {
-				case "deactivate" || "voice":
-					// Get all active accounts owned by the user
-					db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
-						if (err) {
-							console.error(err);
-						} else if (rows) {
-							let accountList = [];
-							rows.forEach((row) => {
-								accountList.push({
-									name: `${row.id} - ${row.phone}`,
-									value: `${row.id}`
-								});
-							});
-							interaction.respond(accountList);
-						}
+			// Get all active accounts owned by the user
+			db.all("SELECT * FROM accounts WHERE discord_id = ? AND verified = 1", interaction.user.id, (err, rows) => {
+				if (err) {
+					console.error(err);
+				} else if (rows) {
+					let accountList = [];
+					rows.forEach((row) => {
+						accountList.push({
+							name: `${row.id} - ${row.phone}`,
+							value: `${row.id}`
+						});
 					});
-					break;
+					interaction.respond(accountList);
 				}
-			break;
+			});
 	}
 });
 

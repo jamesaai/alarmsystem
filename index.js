@@ -57,25 +57,25 @@ var handledTransactions = [];
 // Funcs
 
 function sanitizeForTTS(input) {
-    // Remove any HTML tags and other potentially dangerous characters
-    let sanitized = input.replace(/<[^>]*>?/gm, "");  // Remove HTML tags
-    sanitized = sanitized.replace(/[^\w\s,.!?'-]/g, "");  // Allow only basic punctuation and word characters
-    
-    // Replace multiple spaces with a single space
-    sanitized = sanitized.replace(/\s\s+/g, " ");
-    
-    // Trim extra whitespace from the beginning and end
-    sanitized = sanitized.trim();
-    
-    // Optionally, you could replace or normalize abbreviations
-    sanitized = sanitized.replace(/\bMr\.\b/g, "Mister");
-    sanitized = sanitized.replace(/\bMrs\.\b/g, "Misses");
-    sanitized = sanitized.replace(/\bDr\.\b/g, "Doctor");
-    sanitized = sanitized.replace(/\bSt\.\b/g, "Saint");
+	// Remove any HTML tags and other potentially dangerous characters
+	let sanitized = input.replace(/<[^>]*>?/gm, "");  // Remove HTML tags
+	sanitized = sanitized.replace(/[^\w\s,.!?'-]/g, "");  // Allow only basic punctuation and word characters
 
-    // Additional logic can go here (e.g., profanity filtering, replacing unsupported characters)
-    
-    return sanitized;
+	// Replace multiple spaces with a single space
+	sanitized = sanitized.replace(/\s\s+/g, " ");
+
+	// Trim extra whitespace from the beginning and end
+	sanitized = sanitized.trim();
+
+	// Optionally, you could replace or normalize abbreviations
+	sanitized = sanitized.replace(/\bMr\.\b/g, "Mister");
+	sanitized = sanitized.replace(/\bMrs\.\b/g, "Misses");
+	sanitized = sanitized.replace(/\bDr\.\b/g, "Doctor");
+	sanitized = sanitized.replace(/\bSt\.\b/g, "Saint");
+
+	// Additional logic can go here (e.g., profanity filtering, replacing unsupported characters)
+
+	return sanitized;
 }
 
 function runCommand(command, stdin) {
@@ -188,7 +188,7 @@ function sendAlert(accountNumber, transaction, placeName, systemName, zoneNumber
 						newCooldown = new Date();
 						newCooldown.setMinutes(newCooldown.getMinutes() + 5);
 
-						db.run("UPDATE accounts SET cooldown = ? WHERE id = ?", newCooldown.toISOString() ,accountNumber, (err) => {
+						db.run("UPDATE accounts SET cooldown = ? WHERE id = ?", newCooldown.toISOString(), accountNumber, (err) => {
 							if (err) {
 								console.error(err);
 							}
@@ -326,7 +326,7 @@ function sendVerificationCode(account) {
 				newCooldown = new Date();
 				newCooldown.setMinutes(newCooldown.getMinutes() + 5);
 
-				db.run("UPDATE accounts SET cooldown = ? WHERE id = ?", newCooldown.toISOString() ,accountNumber, (err) => {
+				db.run("UPDATE accounts SET cooldown = ? WHERE id = ?", newCooldown.toISOString(), accountNumber, (err) => {
 					if (err) {
 						console.error(err);
 					}
@@ -735,7 +735,7 @@ app.post("/api/v1/webhook/:brand/:accountNumber", (req, res) => {
 
 				// send alert to accountNumber
 				sendAlert(req.params.accountNumber, req.body.transaction, req.body.placeName, req.body.systemName, req.body.zoneNumber, req.body.zoneName, req.body.event).then((resp) => {
-					if(resp == "Cooldown") {
+					if (resp == "Cooldown") {
 						return res.status(429).send("Cooldown");
 					}
 					res.status(204).send();
@@ -773,14 +773,14 @@ app.ws("/api/v1/websocket/:accountNumber", (ws, req) => {
 	db.get("SELECT * FROM accounts WHERE id = ? AND verified = 1", req.params.accountNumber, (err, row) => {
 		if (err) {
 			console.error(err);
-			ws.send(JSON.stringify({status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString()}));
+			ws.send(JSON.stringify({ status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString() }));
 			ws.close();
 			return;
 		} else if (row) {
 			userData = row;
-			ws.send(JSON.stringify({status: "connected", code: 200, timestamp: new Date().toISOString()}));
+			ws.send(JSON.stringify({ status: "connected", code: 200, timestamp: new Date().toISOString() }));
 		} else {
-			ws.send(JSON.stringify({status: "error", code: 404, message: "Account not found or not verified", timestamp: new Date().toISOString()}));
+			ws.send(JSON.stringify({ status: "error", code: 404, message: "Account not found or not verified", timestamp: new Date().toISOString() }));
 			ws.close();
 			return;
 		}
@@ -792,25 +792,25 @@ app.ws("/api/v1/websocket/:accountNumber", (ws, req) => {
 			msg = JSON.parse(msg);
 		} catch (error) {
 			console.error(error);
-			ws.send(JSON.stringify({status: "error", message: "Invalid JSON", timestamp: new Date().toISOString()}));
+			ws.send(JSON.stringify({ status: "error", message: "Invalid JSON", timestamp: new Date().toISOString() }));
 			return;
 		}
-		switch(msg.action) {
+		switch (msg.action) {
 			case "close":
-				ws.send(JSON.stringify({response: "closed", timestamp: new Date().toISOString()}));
+				ws.send(JSON.stringify({ response: "closed", timestamp: new Date().toISOString() }));
 				ws.close();
 				break;
 			case "ping":
-				ws.send(JSON.stringify({response: "pong", timestamp: new Date().toISOString()}));
+				ws.send(JSON.stringify({ response: "pong", timestamp: new Date().toISOString() }));
 				break;
 			case "getStatus":
 				// Get the armState column from the account database
 				db.get("SELECT armState FROM accounts WHERE id = ?", req.params.accountNumber, (err, row) => {
 					if (err) {
 						console.error(err);
-						ws.send(JSON.stringify({action: msg.action, status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString()}));
+						ws.send(JSON.stringify({ action: msg.action, status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString() }));
 					} else {
-						ws.send(JSON.stringify({action: msg.action, status: "success", code: 200, armState: row.armState, timestamp: new Date().toISOString()}));
+						ws.send(JSON.stringify({ action: msg.action, status: "success", code: 200, armState: row.armState, timestamp: new Date().toISOString() }));
 					}
 				});
 				break;
@@ -846,14 +846,26 @@ app.ws("/api/v1/websocket/:accountNumber", (ws, req) => {
 				db.run("UPDATE accounts SET armState = ? WHERE id = ?", msg.armState, req.params.accountNumber, (err) => {
 					if (err) {
 						console.error(err);
-						ws.send(JSON.stringify({action: msg.action, status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString()}));
+						ws.send(JSON.stringify({ action: msg.action, status: "error", code: 500, message: "Internal Server Error", timestamp: new Date().toISOString() }));
 					} else {
-						ws.send(JSON.stringify({action: msg.action, status: "success", code: 200, timestamp: new Date().toISOString()}));
+						ws.send(JSON.stringify({ action: msg.action, status: "success", code: 200, timestamp: new Date().toISOString() }));
 					}
 				});
 				break;
 
 		}
+	});
+});
+
+app.get('/api/healthcheck', (req, res) => {
+	// Check if the bot is logged in and connected to Discord
+	const botHealthy = client.isReady();
+
+	// Respond with the health check status
+	res.json({
+		healthy: botHealthy,
+		botStatus: botHealthy ? 'Bot is connected and healthy' : 'Bot is not connected or has failed',
+		timestamp: new Date(),
 	});
 });
 

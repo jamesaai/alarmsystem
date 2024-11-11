@@ -1,0 +1,17 @@
+[
+	{
+		"name": "Piper - Amy (Default)",
+		"value": "0",
+		"command": "piper -m /opt/alarm-monitoring/tts/en_US-amy-medium.onnx -f %s"
+	},
+	{
+		"name": "Flite - OG SecuriNet Voice",
+		"value": "1",
+		"command": "flite -o %s"
+	},
+	{
+		"name": "DECTalk Paul",
+		"value": "2",
+		"command": "/usr/bin/dectalk/say -fo %s -"
+	}
+]

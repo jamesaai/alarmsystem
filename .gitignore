@@ -133,3 +133,4 @@ dist
 database.db
 tts/*
 !tts/.gitkeep
+tts.json

@@ -405,7 +405,7 @@ client.on("interactionCreate", async (interaction) => {
 				case "register":
 					phone_number = interaction.options.getString("phone_number");
 					// Check that phone_number is either a 4 digit number starting with 1, a 7 digit number, a 10 digit number, or an 11 digit number starting with 1
-					if (!/^(1\d{3}|\d{7}|\d{10}|1\d{10})$/.test(phone_number)) {
+					if (!/\b(?:\d{4}|\d{10}|\d{7}|1\d{10})\b/.test(phone_number)) {
 						interaction.reply({ ephemeral: true, content: "Invalid phone number. Please enter one of the following:\n- A 4 digit LiteNet extension.\n- A 7 digit TandmX number\n- An 10 digit US phone number.\n- An 11 digit US phone number" });
 						return;
 					}
